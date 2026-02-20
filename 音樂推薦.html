@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8">
+  <title>心情播放器</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <canvas id="bgCanvas"></canvas>
+  <div class="content">
+    <p class="site-title">Mood Player</p>
+    <h1 class="question">你現在是什麼感覺？</h1>
+
+    <div class="mood-grid">
+      <button class="mood-btn" onclick="selectMood('empty',this)">空洞 / 喪</button>
+      <button class="mood-btn" onclick="selectMood('hype',this)">亢奮 / 躁動</button>
+      <button class="mood-btn" onclick="selectMood('calm',this)">平靜 / 飄渺</button>
+      <button class="mood-btn" onclick="selectMood('nostalgic',this)">懷念 / 憂鬱</button>
+      <button class="mood-btn" onclick="selectMood('frustrated',this)">煩躁 / 想發洩</button>
+    </div>
+
+    <div class="result" id="result">
+      <p class="vibe-text" id="vibeText"></p>
+      <p class="tracks-label">推薦曲目 — 點擊前往收聽</p>
+      <div class="tracks" id="tracksList"></div>
+      <hr class="divider">
+      <p class="links-label">想找更多</p>
+      <div class="links" id="linksList"></div>
+      <button class="reset-btn" onclick="reset()">↩ 重新選擇</button>
+    </div>
+  </div>
+
+  <script>
+    const moods = {
+      empty: {
+        color: '#7B8CDE', rgb: '123,140,222',
+        vibe: '你現在需要的不是熱鬧，是某種能陪著你安靜待著的聲音。低頻的、緩慢的、有點模糊的，像是有人坐在你旁邊但什麼都不說。',
+        tracks: [
+          { title: '空洞です (Hollow Me)', artist: 'ゆらゆら帝国', note: '空曠又有點詭異，完全沒有出口的感覺', yt: 'mKUhq7SYouA' },
+        ],
+        links: [
+          { icon: '🎵', title: '搜尋更多', desc: 'Spotify — sad indie / lo-fi melancholy', url: 'https://open.spotify.com/search/sad%20indie', platform: 'Spotify' },
+          { icon: '📺', title: '搜尋更多', desc: 'YouTube — empty feeling playlist', url: 'https://www.youtube.com/results?search_query=empty+feeling+playlist', platform: 'YouTube' },
+        ]
+      },
+      hype: {
+        color: '#FF6B6B', rgb: '255,107,107',
+        vibe: '你需要的是那種一開場就把你抓住的聲音，高能量、有衝勁，最好能讓你忍不住想動。不要那種要慢慢進入的，要直接點燃的。',
+        tracks: [
+          { title: '1984', artist: 'andymori', note: '三分鐘內把你燒完', yt: 'kJu8ti-zZd4' },
+          { title: "Can't Stop", artist: 'Red Hot Chili Peppers', note: '那種停不下來的衝勁', yt: '8DyziWtkfBw' },
+        ],
+        links: [
+          { icon: '🎵', title: '搜尋更多', desc: 'Spotify — high energy rock / punk', url: 'https://open.spotify.com/search/high%20energy%20rock', platform: 'Spotify' },
+          { icon: '📺', title: '搜尋更多', desc: 'YouTube — hype rock playlist', url: 'https://www.youtube.com/results?search_query=hype+rock+playlist', platform: 'YouTube' },
+        ]
+      },
+      calm: {
+        color: '#56CCF2', rgb: '86,204,242',
+        vibe: '你需要的是某種有空間感的聲音，不是沉默，而是那種有點遙遠、輕盈的質地。像是天氣很好的下午，窗戶開著，什麼都可以不想。',
+        tracks: [
+          { title: 'グッドバイ / Goodbye', artist: 'toe', note: '輕柔又有深度，時間好像慢下來了', yt: 'e1pZIfretEs' },
+          { title: '風來了', artist: 'VOOID', note: '安靜卻有深度，讓思緒自由漂流', yt: '4eUTxGa8mv0' },
+        ],
+        links: [
+          { icon: '🎵', title: '搜尋更多', desc: 'Spotify — dreamy indie / ambient', url: 'https://open.spotify.com/search/dreamy%20ambient', platform: 'Spotify' },
+          { icon: '📺', title: '搜尋更多', desc: 'YouTube — calm dreamy music', url: 'https://www.youtube.com/results?search_query=calm+dreamy+music', platform: 'YouTube' },
+        ]
+      },
+      nostalgic: {
+        color: '#F2994A', rgb: '242,153,74',
+        vibe: '你現在想回到某個地方，或某個時候。某種有點舊、有點溫的聲音，不需要太清晰，朦朧一點反而更對。像是記憶本來就有點模糊。',
+        tracks: [
+          { title: 'Goodbye Angels', artist: 'Red Hot Chili Peppers', note: '溫柔又帶點憂傷，像某個快忘掉的人', yt: 'txTqtm58AqM' },
+        ],
+        links: [
+          { icon: '🎵', title: '搜尋更多', desc: 'Spotify — nostalgic rock / melancholic', url: 'https://open.spotify.com/search/nostalgic%20rock', platform: 'Spotify' },
+          { icon: '📺', title: '搜尋更多', desc: 'YouTube — nostalgic music playlist', url: 'https://www.youtube.com/results?search_query=nostalgic+music+playlist', platform: 'YouTube' },
+        ]
+      },
+      frustrated: {
+        color: '#EB5757', rgb: '235,87,87',
+        vibe: '你需要的是有點粗糙、有點吵的聲音。不用優雅，不用美，只要夠直接，能把這種堵在胸口的東西打散就好。讓音量幫你說你說不出口的話。',
+        tracks: [
+          { title: 'Into the Void', artist: 'VOOID', note: '直接衝進去，不管後果', yt: 'YShaOhE8LB8' },
+        ],
+        links: [
+          { icon: '🎵', title: '搜尋更多', desc: 'Spotify — aggressive rock / post-hardcore', url: 'https://open.spotify.com/search/aggressive%20rock', platform: 'Spotify' },
+          { icon: '📺', title: '搜尋更多', desc: 'YouTube — angry rock playlist', url: 'https://www.youtube.com/results?search_query=angry+rock+playlist', platform: 'YouTube' },
+        ]
+      },
+    };
+
+    // ── 粒子背景 ──────────────────────────────────────────
+    const canvas = document.getElementById('bgCanvas'), ctx = canvas.getContext('2d');
+    let particles = [], moodColor = '#00BFFF';
+
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    function initParticles(c) {
+      moodColor = c;
+      particles = Array.from({ length: 60 }, () => ({
+        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+        r: Math.random() * 2 + 0.5, vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4,
+        alpha: Math.random() * .5 + .1,
+      }));
+    }
+    function drawParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = moodColor + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
+      });
+      requestAnimationFrame(drawParticles);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(); initParticles('#00BFFF'); drawParticles();
+
+    // ── 主邏輯 ───────────────────────────────────────────
+    function selectMood(key, btn) {
+      const mood = moods[key];
+      document.documentElement.style.setProperty('--mood-color', mood.color);
+      document.documentElement.style.setProperty('--mood-rgb', mood.rgb);
+      moodColor = mood.color;
+
+      document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.getElementById('vibeText').textContent = mood.vibe;
+
+      document.getElementById('tracksList').innerHTML = mood.tracks.map((t, i) => {
+        const tag = t.yt ? 'a' : 'div';
+        const href = t.yt ? `href="https://www.youtube.com/watch?v=${t.yt}" target="_blank" rel="noreferrer"` : '';
+        return `
+          <${tag} class="track-item" ${href}>
+            <span class="track-num">${i + 1}</span>
+            <div class="track-info">
+              <div class="track-title">${t.title}</div>
+              <div class="track-artist">${t.artist}</div>
+              <div class="track-note">${t.note}</div>
+            </div>
+            <span class="track-arrow">${t.yt ? '→' : '⏳'}</span>
+          </${tag}>
+        `;
+      }).join('');
+
+      document.getElementById('linksList').innerHTML = mood.links.map(l => `
+        <a class="link-item" href="${l.url}" target="_blank" rel="noreferrer">
+          <span class="link-icon">${l.icon}</span>
+          <div class="link-info">
+            <div class="link-title">${l.title}</div>
+            <div class="link-desc">${l.desc}</div>
+          </div>
+          <span class="link-platform">${l.platform}</span>
+        </a>
+      `).join('');
+
+      document.getElementById('result').classList.add('show');
+    }
+
+    function reset() {
+      document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('result').classList.remove('show');
+      document.documentElement.style.setProperty('--mood-color', '#00BFFF');
+      moodColor = '#00BFFF';
+    }
+  </script>
+</body>
+
+</html>
