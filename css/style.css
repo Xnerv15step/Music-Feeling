@@ -86,7 +86,7 @@ body {
   flex-wrap: wrap;
   gap: 12px;
   justify-content: center;
-  max-width: 560px;
+  max-width: max-content;
   margin-bottom: 56px;
 }
 
