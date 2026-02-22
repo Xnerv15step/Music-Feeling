@@ -86,7 +86,7 @@ body {
   flex-wrap: wrap;
   gap: 12px;
   justify-content: center;
-  max-width: max-content;
+  max-width: 800px; /* 加寬，確保大螢幕五顆按鈕能排同一行 */
   margin-bottom: 56px;
 }
 
