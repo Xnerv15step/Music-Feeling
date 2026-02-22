@@ -8,11 +8,15 @@
 </head>
 
 <body>
+
+  <!-- 粒子背景畫布，透過 JS 動態繪製，fixed 定位在最底層 -->
   <canvas id="bgCanvas"></canvas>
+
   <div class="content">
     <p class="site-title">Mood Player</p>
     <h1 class="question">你現在是什麼感覺？</h1>
 
+    <!-- 心情選擇按鈕群組，點擊後呼叫 selectMood()，傳入心情 key 與按鈕本身 -->
     <div class="mood-grid">
       <button class="mood-btn" onclick="selectMood('empty',this)">空洞 / 喪</button>
       <button class="mood-btn" onclick="selectMood('hype',this)">亢奮 / 躁動</button>
@@ -21,18 +25,34 @@
       <button class="mood-btn" onclick="selectMood('frustrated',this)">煩躁 / 想發洩</button>
     </div>
 
+    <!-- 推薦結果區塊：預設透明隱藏，選擇心情後加上 .show class 顯示 -->
     <div class="result" id="result">
+      <!-- 氛圍描述文字，內容由 JS 動態填入 -->
       <p class="vibe-text" id="vibeText"></p>
+
       <p class="tracks-label">推薦曲目 — 點擊前往收聽</p>
+      <!-- 推薦曲目列表，由 JS 動態產生 <a> 或 <div> 元素 -->
       <div class="tracks" id="tracksList"></div>
+
       <hr class="divider">
+
       <p class="links-label">想找更多</p>
+      <!-- 外部平台搜尋連結，由 JS 動態產生 -->
       <div class="links" id="linksList"></div>
+
+      <!-- 重置按鈕，清除選取狀態並隱藏結果區塊 -->
       <button class="reset-btn" onclick="reset()">↩ 重新選擇</button>
     </div>
   </div>
 
   <script>
+    // ── 心情資料 ─────────────────────────────────────────
+    // 每個 key 對應一種心情，包含：
+    //   color  — CSS 主題色（十六進位）
+    //   rgb    — 同色 RGB 值，供 rgba() 透明度使用
+    //   vibe   — 氛圍描述文字
+    //   tracks — 推薦曲目陣列，yt 為 YouTube 影片 ID（無影片則省略）
+    //   links  — 外部平台搜尋連結陣列
     const moods = {
       empty: {
         color: '#7B8CDE', rgb: '123,140,222',
@@ -93,49 +113,97 @@
       },
     };
 
-    // ── 粒子背景 ──────────────────────────────────────────
-    const canvas = document.getElementById('bgCanvas'), ctx = canvas.getContext('2d');
-    let particles = [], moodColor = '#00BFFF';
 
-    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    function initParticles(c) {
-      moodColor = c;
+    // ── 粒子背景 ─────────────────────────────────────────
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let moodColor = '#00BFFF'; // 初始粒子顏色（未選心情前的預設色）
+
+    // 讓 canvas 尺寸隨視窗大小同步，避免粒子繪製超出邊界
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    // 初始化粒子陣列，切換心情時重新呼叫以更新顏色
+    // 每顆粒子有隨機的位置、半徑、速度、透明度
+    function initParticles(color) {
+      moodColor = color;
       particles = Array.from({ length: 60 }, () => ({
-        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-        r: Math.random() * 2 + 0.5, vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4,
-        alpha: Math.random() * .5 + .1,
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 2 + 0.5,           // 半徑 0.5 ~ 2.5px
+        vx: (Math.random() - 0.5) * 0.4,      // 水平速度（負 = 向左）
+        vy: (Math.random() - 0.5) * 0.4,      // 垂直速度（負 = 向上）
+        alpha: Math.random() * 0.5 + 0.1,     // 透明度 0.1 ~ 0.6
       }));
     }
+
+    // 每幀清除畫布、重繪所有粒子並更新位置
+    // 超出邊界時從對側重新進入（無縫循環效果）
     function drawParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       particles.forEach(p => {
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+
+        // 將 alpha 轉為兩位十六進位附加在色碼後，組成帶透明度的顏色字串
         ctx.fillStyle = moodColor + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
         ctx.fill();
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
+
+        // 更新位置
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // 邊界循環
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
       });
-      requestAnimationFrame(drawParticles);
+
+      requestAnimationFrame(drawParticles); // 持續呼叫，形成動畫迴圈
     }
+
+    // 監聽視窗 resize，保持 canvas 尺寸正確
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas(); initParticles('#00BFFF'); drawParticles();
+
+    // 初始化：設定尺寸 → 建立粒子 → 啟動動畫
+    resizeCanvas();
+    initParticles('#00BFFF');
+    drawParticles();
+
 
     // ── 主邏輯 ───────────────────────────────────────────
+
+    // 選擇心情後觸發，更新主題色、氛圍文字、曲目列表、連結列表
     function selectMood(key, btn) {
       const mood = moods[key];
+
+      // 更新 CSS 變數，讓整頁主題色同步切換（按鈕 active 色、邊框色等）
       document.documentElement.style.setProperty('--mood-color', mood.color);
       document.documentElement.style.setProperty('--mood-rgb', mood.rgb);
+
+      // 同步更新粒子顏色（不重新 initParticles，保留現有粒子位置）
       moodColor = mood.color;
 
+      // 切換按鈕 active 狀態：先全部移除，再標記當前點擊的按鈕
       document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
+      // 填入氛圍描述
       document.getElementById('vibeText').textContent = mood.vibe;
 
+      // 動態產生曲目列表
+      // 有 yt ID → 用 <a> 包裝，點擊直接開啟 YouTube
+      // 無 yt ID → 用 <div>，顯示等待圖示
       document.getElementById('tracksList').innerHTML = mood.tracks.map((t, i) => {
         const tag = t.yt ? 'a' : 'div';
-        const href = t.yt ? `href="https://www.youtube.com/watch?v=${t.yt}" target="_blank" rel="noreferrer"` : '';
+        const href = t.yt
+          ? `href="https://www.youtube.com/watch?v=${t.yt}" target="_blank" rel="noreferrer"`
+          : '';
         return `
           <${tag} class="track-item" ${href}>
             <span class="track-num">${i + 1}</span>
@@ -149,6 +217,7 @@
         `;
       }).join('');
 
+      // 動態產生外部平台搜尋連結
       document.getElementById('linksList').innerHTML = mood.links.map(l => `
         <a class="link-item" href="${l.url}" target="_blank" rel="noreferrer">
           <span class="link-icon">${l.icon}</span>
@@ -160,9 +229,11 @@
         </a>
       `).join('');
 
+      // 顯示結果區塊（加上 .show → CSS transition 淡入）
       document.getElementById('result').classList.add('show');
     }
 
+    // 重置：清除所有按鈕 active 狀態、隱藏結果、恢復預設主題色
     function reset() {
       document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('result').classList.remove('show');
@@ -170,6 +241,7 @@
       moodColor = '#00BFFF';
     }
   </script>
+
 </body>
 
 </html>

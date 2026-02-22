@@ -1,18 +1,26 @@
+/* ── Reset ───────────────────────────────────────────────
+   清除所有元素的預設 box model、margin、padding，
+   統一以 border-box 計算寬高（含 padding 與 border）     */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* ── CSS 變數 ────────────────────────────────────────────
+   集中管理全站顏色與過渡時間，方便主題切換。
+   --mood-color / --mood-rgb 會在選擇心情後由 JS 動態覆寫  */
 :root {
-  --bg: #111114;
-  --text: #e0e0e0;
-  --sub: #666;
-  --mood-color: #00BFFF;
-  --mood-rgb: 0, 191, 255;
-  --transition: 0.7s ease;
+  --bg: #111114;            /* 頁面背景色 */
+  --text: #e0e0e0;          /* 主要文字色 */
+  --sub: #666;              /* 次要文字色（標籤、描述等） */
+  --mood-color: #00BFFF;    /* 心情主題色（預設值） */
+  --mood-rgb: 0, 191, 255;  /* 同色 RGB，供 rgba() 使用 */
+  --transition: 0.7s ease;  /* 主題色切換的過渡時間 */
 }
 
+/* ── Body ────────────────────────────────────────────────
+   Flex 垂直置中排列，確保內容在視窗中央對齊             */
 body {
   font-family: 'Segoe UI', sans-serif;
   background: var(--bg);
@@ -23,9 +31,12 @@ body {
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  overflow-x: hidden;
+  overflow-x: hidden; /* 防止粒子動畫造成水平捲軸 */
 }
 
+/* ── 粒子背景畫布 ────────────────────────────────────────
+   fixed 固定在視窗最底層，pointer-events: none 確保
+   不攔截使用者的點擊與互動                               */
 #bgCanvas {
   position: fixed;
   top: 0;
@@ -34,9 +45,11 @@ body {
   height: 100%;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.4;
+  opacity: 0.4; /* 降低透明度，讓粒子不搶過主要內容 */
 }
 
+/* ── 主內容容器 ──────────────────────────────────────────
+   z-index: 1 確保浮在 canvas 上方                        */
 .content {
   position: relative;
   z-index: 1;
@@ -46,6 +59,8 @@ body {
   width: 100%;
 }
 
+/* ── 頂部標題 ────────────────────────────────────────────
+   小字、寬間距，作為低調的品牌標記                       */
 .site-title {
   font-size: 11px;
   letter-spacing: 5px;
@@ -54,6 +69,8 @@ body {
   text-transform: uppercase;
 }
 
+/* ── 主問題標題 ──────────────────────────────────────────
+   clamp() 讓字體在不同螢幕寬度下自適應縮放               */
 .question {
   font-size: clamp(1.6rem, 4vw, 2.4rem);
   font-weight: 700;
@@ -62,6 +79,8 @@ body {
   line-height: 1.4;
 }
 
+/* ── 心情按鈕群組 ────────────────────────────────────────
+   flex-wrap 讓按鈕在窄螢幕自動換行                       */
 .mood-grid {
   display: flex;
   flex-wrap: wrap;
@@ -71,6 +90,8 @@ body {
   margin-bottom: 56px;
 }
 
+/* ── 心情按鈕（預設態） ──────────────────────────────────
+   無背景、細邊框膠囊形，視覺輕盈                         */
 .mood-btn {
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -82,18 +103,24 @@ body {
   transition: all 0.25s;
 }
 
+/* ── 心情按鈕（Hover 態） ────────────────────────────────
+   邊框變亮、文字變白、微微上浮，提供點擊回饋             */
 .mood-btn:hover {
   border-color: rgba(255, 255, 255, 0.35);
   color: var(--text);
   transform: translateY(-2px);
 }
 
+/* ── 心情按鈕（Active 態） ───────────────────────────────
+   套用心情主題色，並加上對應色彩的 glow 光暈             */
 .mood-btn.active {
   border-color: var(--mood-color);
   color: var(--mood-color);
   box-shadow: 0 0 24px rgba(var(--mood-rgb), 0.25);
 }
 
+/* ── 結果區塊（隱藏態） ──────────────────────────────────
+   預設透明且下移 24px，pointer-events: none 防止誤觸     */
 .result {
   max-width: 560px;
   width: 100%;
@@ -103,12 +130,16 @@ body {
   pointer-events: none;
 }
 
+/* ── 結果區塊（顯示態） ──────────────────────────────────
+   JS 加上 .show 後，transition 自動執行淡入 + 上移動畫  */
 .result.show {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
 
+/* ── 氛圍描述文字 ────────────────────────────────────────
+   左側彩色邊線隨心情變色（transition 對應 --transition）  */
 .vibe-text {
   font-size: 15px;
   line-height: 2;
@@ -121,13 +152,17 @@ body {
   transition: border-color var(--transition);
 }
 
-.tracks-label {
+/* ── 區段標籤（推薦曲目 / 想找更多） ─────────────────────
+   全大寫小字、寬字距，視覺上作為區段標題                 */
+.tracks-label,
+.links-label {
   font-size: 11px;
   letter-spacing: 3px;
   color: var(--sub);
   margin-bottom: 16px;
 }
 
+/* ── 曲目列表容器 ────────────────────────────────────────*/
 .tracks {
   display: flex;
   flex-direction: column;
@@ -135,6 +170,9 @@ body {
   margin-bottom: 24px;
 }
 
+/* ── 單一曲目卡片 ────────────────────────────────────────
+   <a> 與 <div> 共用此樣式，text-decoration: none 去除
+   預設連結底線                                            */
 .track-item {
   display: flex;
   align-items: center;
@@ -149,20 +187,25 @@ body {
   text-decoration: none;
 }
 
+/* ── 曲目卡片（Hover 態） ────────────────────────────────
+   右移 4px + 邊框亮色，強調可點擊性                      */
 .track-item:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: var(--mood-color);
   transform: translateX(4px);
 }
 
+/* ── 曲目序號 ────────────────────────────────────────────*/
 .track-num {
   font-size: 13px;
   color: var(--sub);
-  width: 20px;
+  width: 20px;        /* 固定寬度，讓多位數序號也對齊 */
   flex-shrink: 0;
   text-align: right;
 }
 
+/* ── 曲目資訊區（標題 + 歌手 + 備註） ────────────────────
+   flex: 1 讓此區塊撐滿剩餘空間                           */
 .track-info {
   flex: 1;
 }
@@ -185,6 +228,8 @@ body {
   margin-top: 2px;
 }
 
+/* ── 曲目箭頭 ────────────────────────────────────────────
+   預設隱藏（opacity: 0），hover 時淡入並右移             */
 .track-arrow {
   font-size: 14px;
   color: var(--mood-color);
@@ -198,25 +243,23 @@ body {
   transform: translateX(4px);
 }
 
+/* ── 分隔線 ──────────────────────────────────────────────
+   用 border-top 模擬細線，border: none 清除預設樣式      */
 .divider {
   border: none;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   margin: 24px 0;
 }
 
-.links-label {
-  font-size: 11px;
-  letter-spacing: 3px;
-  color: var(--sub);
-  margin-bottom: 16px;
-}
-
+/* ── 外部連結列表容器 ────────────────────────────────────*/
 .links {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
+/* ── 單一外部連結卡片 ────────────────────────────────────
+   與曲目卡片相同的視覺語言，hover 邊框改為白色系（而非主題色）*/
 .link-item {
   display: flex;
   align-items: center;
@@ -256,12 +299,16 @@ body {
   color: var(--sub);
 }
 
+/* ── 平台名稱標籤 ────────────────────────────────────────
+   靠右對齊，讓使用者一眼辨識目標平台                     */
 .link-platform {
   font-size: 11px;
   color: var(--sub);
   flex-shrink: 0;
 }
 
+/* ── 重置按鈕 ────────────────────────────────────────────
+   無邊框無背景，居中顯示，低調不搶視覺                   */
 .reset-btn {
   background: none;
   border: none;
@@ -280,6 +327,8 @@ body {
   color: var(--text);
 }
 
+/* ── 響應式：窄螢幕（≤ 480px） ──────────────────────────
+   縮小按鈕字體與內距，避免在小螢幕上擠成一排             */
 @media (max-width: 480px) {
   .mood-btn {
     font-size: 14px;
